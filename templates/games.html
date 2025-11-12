@@ -1,0 +1,63 @@
+﻿{% extends "base.html" %}
+{% block title %}Matchs{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1>Matchs</h1>
+        <p style="color:#6b7280;">Visualisez les matchs enregistrés avec les scores par participant.</p>
+    </div>
+</div>
+<form method="get" style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
+    <div>
+        <label for="season">Saison</label>
+        <input type="text" id="season" name="season" value="{{ filters.season }}">
+    </div>
+    <div>
+        <label for="type">Type</label>
+        <input type="text" id="type" name="type" value="{{ filters.game_type }}">
+    </div>
+    <div>
+        <label for="league">Ligue</label>
+        <select id="league" name="league">
+            <option value="">Toutes</option>
+            {% for league in leagues %}
+                <option value="{{ league.id_lea }}" {% if filters.league and filters.league|int == league.id_lea %}selected{% endif %}>{{ league.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div style="align-self:end;">
+        <button type="submit">Filtrer</button>
+    </div>
+</form>
+<section style="margin-top:1.5rem;display:grid;gap:1.5rem;">
+    {% for game in games %}
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+                <div class="card-title">{{ game.game_type }} · {{ game.location }}</div>
+                <div class="card-value" style="font-size:1.2rem;">{{ game.game_date.strftime('%d/%m/%Y') }}</div>
+                <div style="color:#6b7280;font-size:0.9rem;">Match #{{ game.game_id }}{% if game.league %} · {{ game.league.name }}{% elif game.championship %} · {{ game.championship.name }} {{ game.championship.year }}{% endif %}</div>
+            </div>
+        </div>
+        <table>
+            <thead><tr><th>Participant</th><th>Type</th><th>Score</th><th>Rôle</th></tr></thead>
+            <tbody>
+                {% for participant in game.participants %}
+                <tr>
+                    <td>{{ participant.display_name }}</td>
+                    <td>{{ participant.participant_type }}</td>
+                    <td>{{ participant.score }}</td>
+                    <td>{{ participant.role }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4">Pas de participants liés.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>Aucun match ne correspond à votre filtre.</p>
+    {% endfor %}
+</section>
+{% endblock %}
+

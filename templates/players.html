@@ -1,0 +1,62 @@
+﻿{% extends "base.html" %}
+{% block title %}Gestion des joueurs{% endblock %}
+{% block content %}
+<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+    <div>
+        <h1>Joueurs</h1>
+        <p style="color:#6b7280;">Consultez et gérez les fiches joueurs avec leur club actuel.</p>
+    </div>
+    {% if permissions.can_edit_players %}
+    <a href="{{ url_for('create_player') }}"> <button>Nouveau joueur</button> </a>
+    {% endif %}
+</div>
+<form method="get" style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
+    <div>
+        <label for="q">Nom contient</label>
+        <input type="text" id="q" name="q" value="{{ filters.q }}">
+    </div>
+    <div>
+        <label for="club">Club</label>
+        <select id="club" name="club">
+            <option value="">Tous</option>
+            {% for club in clubs %}
+                <option value="{{ club.id_clu }}" {% if filters.club and filters.club|int == club.id_clu %}selected{% endif %}>{{ club.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div style="align-self:end;">
+        <button type="submit">Filtrer</button>
+    </div>
+</form>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Date de naissance</th>
+            <th>Taille (m)</th>
+            <th>Club</th>
+            {% if permissions.can_edit_players %}<th>Actions</th>{% endif %}
+        </tr>
+    </thead>
+    <tbody>
+    {% for player in players %}
+        <tr>
+            <td>{{ player.player_id }}</td>
+            <td>{{ player.name }}</td>
+            <td>{{ player.date_of_birth.strftime('%d/%m/%Y') if player.date_of_birth else '-' }}</td>
+            <td>{{ '%.2f'|format(player.height) if player.height else '-' }}</td>
+            <td>{{ player.club.name if player.club else 'N/A' }}</td>
+            {% if permissions.can_edit_players %}
+            <td>
+                <a href="{{ url_for('edit_player', player_id=player.id_pla) }}">Modifier</a>
+            </td>
+            {% endif %}
+        </tr>
+    {% else %}
+        <tr><td colspan="6">Aucun joueur trouvé.</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
+
