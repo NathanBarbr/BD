@@ -16,6 +16,7 @@ DEFAULT_DB_URL = "postgresql+psycopg2://postgres:secret@localhost:5432/basketbal
 app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", DEFAULT_DB_URL)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_ECHO"] = os.getenv("SQLALCHEMY_ECHO", "False").lower() == "true"
 app.config["SECRET_KEY"] = os.getenv("APP_SECRET_KEY", "dev-change-me")
 
 db = SQLAlchemy(app)
@@ -262,48 +263,37 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    stats = {
-        "players": db.session.scalar(db.select(func.count(Player.id_pla))) or 0,
-        "clubs": db.session.scalar(db.select(func.count(Club.id_clu))) or 0,
-        "games": db.session.scalar(db.select(func.count(Game.id_gam))) or 0,
-        "leagues": db.session.scalar(db.select(func.count(League.id_lea))) or 0,
-    }
-
-    top_scorers = (
-        db.session.query(
-            Player.name.label("player_name"),
-            Game.game_id,
-            Game.game_date,
-            (
-                PlayerGameStats.points_2pts_made * 2
-                + PlayerGameStats.points_3pts_made * 3
-                + PlayerGameStats.free_throws_made
-            ).label("total_points"),
-        )
-        .join(Player, Player.id_pla == PlayerGameStats.id_pla)
-        .join(Game, Game.id_gam == PlayerGameStats.id_gam)
-        .order_by(desc("total_points"))
-        .limit(5)
-        .all()
-    )
-
-    upcoming_games = (
-        Game.query.filter(Game.game_date >= date.today())
-        .order_by(Game.game_date.asc())
-        .limit(5)
-        .all()
-    )
+    total_players = Player.query.count()
+    total_games = Game.query.count()
+    total_clubs = Club.query.count()
+    
+    # Chart 1: Players by Citizenship
+    citizenship_data = db.session.query(Player.citizenship, func.count(Player.id_pla)).group_by(Player.citizenship).all()
+    citizenship_labels = [c[0] for c in citizenship_data if c[0]]
+    citizenship_values = [c[1] for c in citizenship_data if c[0]]
+    
+    # Chart 2: Top 5 Scorers (Calculated from stats)
+    top_scorers_query = db.session.query(
+        Player.name,
+        func.sum(PlayerGameStats.points_2pts_made * 2 + PlayerGameStats.points_3pts_made * 3 + PlayerGameStats.free_throws_made).label('total_points')
+    ).join(PlayerGameStats, Player.id_pla == PlayerGameStats.id_pla).group_by(Player.name).order_by(desc('total_points')).limit(5).all()
+    
+    scorer_labels = [s[0] for s in top_scorers_query]
+    scorer_values = [int(s[1]) for s in top_scorers_query]
 
     return render_template(
         "dashboard.html",
-        stats=stats,
-        top_scorers=top_scorers,
-        upcoming_games=upcoming_games,
+        total_players=total_players,
+        total_games=total_games,
+        total_clubs=total_clubs,
         active="dashboard",
+        chart_data={
+            "citizenship_labels": citizenship_labels,
+            "citizenship_values": citizenship_values,
+            "scorer_labels": scorer_labels,
+            "scorer_values": scorer_values
+        }
     )
-
-
-# --- Players -----------------------------------------------------------------
 
 
 @app.route("/players")
@@ -312,23 +302,77 @@ def players():
     q = request.args.get("q", "").strip()
     club_id = request.args.get("club")
     club_id_int = int(club_id) if club_id else None
+    citizenship = request.args.get("citizenship", "").strip()
+    continent = request.args.get("continent", "").strip()
 
     query = Player.query.order_by(Player.name.asc())
     if q:
         query = query.filter(Player.name.ilike(f"%{q}%"))
     if club_id_int:
         query = query.filter(Player.current_club_id == club_id_int)
+    if citizenship:
+        query = query.filter(Player.citizenship == citizenship)
+    if continent:
+        query = query.join(NationalTeam, Player.citizenship == NationalTeam.country).filter(NationalTeam.confederation == continent)
 
     players_list = query.limit(200).all()
     clubs = Club.query.order_by(Club.name.asc()).all()
+    
+    # Get unique confederations (continents)
+    continents = db.session.query(NationalTeam.confederation).distinct().order_by(NationalTeam.confederation.asc()).all()
+    continents = [c[0] for c in continents if c[0]]
+
+    # Get unique citizenships
+    citizenships = db.session.query(Player.citizenship).distinct().order_by(Player.citizenship.asc()).all()
+    citizenships = [c[0] for c in citizenships if c[0]]
 
     return render_template(
         "players.html",
         players=players_list,
         clubs=clubs,
-        filters={"q": q, "club": club_id},
+        continents=continents,
+        citizenships=citizenships,
+        filters={"q": q, "club": club_id, "citizenship": citizenship, "continent": continent},
         active="players",
     )
+
+
+@app.route("/players/<int:player_id>")
+@login_required
+def player_profile(player_id):
+    player = Player.query.get_or_404(player_id)
+    
+    # Fetch all game stats for this player
+    stats = PlayerGameStats.query.filter_by(id_pla=player_id).all()
+    
+    # Calculate career stats
+    games_played = len(stats)
+    total_points = 0
+    total_rebounds = 0
+    total_assists = 0
+    total_blocks = 0
+    
+    for stat in stats:
+        points = (stat.points_2pts_made * 2) + (stat.points_3pts_made * 3) + stat.free_throws_made
+        total_points += points
+        total_rebounds += stat.rebounds
+        total_assists += stat.assists
+        total_blocks += stat.blocks
+        
+    ppg = round(total_points / games_played, 1) if games_played > 0 else 0
+    rpg = round(total_rebounds / games_played, 1) if games_played > 0 else 0
+    apg = round(total_assists / games_played, 1) if games_played > 0 else 0
+
+    career_stats = {
+        "games_played": games_played,
+        "total_points": total_points,
+        "ppg": ppg,
+        "rpg": rpg,
+        "apg": apg,
+        "total_blocks": total_blocks
+    }
+
+    return render_template("player_profile.html", player=player, stats=career_stats)
 
 
 @app.route("/players/new", methods=["GET", "POST"])
@@ -436,13 +480,96 @@ def games():
     games_list = query.limit(50).all()
     attach_participant_names(games_list)
     leagues = League.query.order_by(League.name.asc()).all()
+    
+    # Get unique seasons and game types for filters
+    seasons = db.session.query(Game.season).distinct().order_by(Game.season.desc()).all()
+    seasons = [s[0] for s in seasons if s[0]]
+    
+    game_types = db.session.query(Game.game_type).distinct().order_by(Game.game_type.asc()).all()
+    game_types = [t[0] for t in game_types if t[0]]
 
     return render_template(
         "games.html",
         games=games_list,
         leagues=leagues,
+        seasons=seasons,
+        game_types=game_types,
         filters={"season": season, "game_type": game_type, "league": league_id},
         active="games",
+    )
+
+
+@app.route("/games/<int:game_id>")
+@login_required
+def game_detail(game_id):
+    game = Game.query.get_or_404(game_id)
+    
+    # Fetch player stats for this game
+    stats = PlayerGameStats.query.filter_by(id_gam=game_id).join(Player).order_by(Player.name).all()
+    
+    # Calculate total points for each stat entry
+    for stat in stats:
+        stat.total_points = (stat.points_2pts_made * 2) + (stat.points_3pts_made * 3) + stat.free_throws_made
+
+    return render_template("game_detail.html", game=game, stats=stats)
+
+
+# --- Admin -------------------------------------------------------------------
+
+
+@app.route("/admin/sql", methods=["GET", "POST"])
+@login_required
+@role_required("admin")
+def admin_sql():
+    import glob
+    
+    # Charger les requêtes depuis les fichiers req*.sql
+    queries = {}
+    # On cherche les fichiers req1.sql à req7.sql (ou plus)
+    files = sorted(glob.glob("req*.sql"))
+    
+    for f_path in files:
+        # Extraire le nom (ex: "req1")
+        key = os.path.splitext(os.path.basename(f_path))[0]
+        # Lire le contenu
+        try:
+            with open(f_path, "r", encoding="utf-8-sig") as f:
+                content = f.read().strip()
+                queries[key] = content
+        except Exception:
+            continue
+
+    selected_key = None
+    results = None
+    columns = None
+    error = None
+    sql_query = None
+
+    if request.method == "POST":
+        selected_key = request.form.get("query_key")
+        if selected_key and selected_key in queries:
+            sql_query = queries[selected_key]
+            try:
+                from sqlalchemy import text
+                result_proxy = db.session.execute(text(sql_query))
+                if result_proxy.returns_rows:
+                    columns = result_proxy.keys()
+                    results = result_proxy.fetchall()
+                else:
+                    db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                error = str(e)
+
+    return render_template(
+        "sql_runner.html", 
+        queries=queries,
+        selected_key=selected_key,
+        sql_query=sql_query,
+        results=results, 
+        columns=columns, 
+        error=error,
+        active="sql"
     )
 
 

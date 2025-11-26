@@ -1,5 +1,5 @@
-﻿WITH target_club AS (
-    SELECT id_clu, name FROM clubs WHERE name = 'Club 1'
+WITH target_club AS (
+    SELECT id_clu, name FROM clubs WHERE name = 'FC Barcelona'
 )
 SELECT
     p.name,

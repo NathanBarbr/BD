@@ -7,21 +7,33 @@
         <p style="color:#6b7280;">Visualisez les matchs enregistrés avec les scores par participant.</p>
     </div>
 </div>
-<form method="get" style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
+<form method="get"
+    style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
     <div>
         <label for="season">Saison</label>
-        <input type="text" id="season" name="season" value="{{ filters.season }}">
+        <select id="season" name="season" style="max-height: 150px; overflow-y: auto;">
+            <option value="">Toutes</option>
+            {% for s in seasons %}
+            <option value="{{ s }}" {% if filters.season==s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div>
         <label for="type">Type</label>
-        <input type="text" id="type" name="type" value="{{ filters.game_type }}">
+        <select id="type" name="type" style="max-height: 150px; overflow-y: auto;">
+            <option value="">Tous</option>
+            {% for t in game_types %}
+            <option value="{{ t }}" {% if filters.game_type==t %}selected{% endif %}>{{ t }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div>
         <label for="league">Ligue</label>
-        <select id="league" name="league">
+        <select id="league" name="league" style="max-height: 150px; overflow-y: auto;">
             <option value="">Toutes</option>
             {% for league in leagues %}
-                <option value="{{ league.id_lea }}" {% if filters.league and filters.league|int == league.id_lea %}selected{% endif %}>{{ league.name }}</option>
+            <option value="{{ league.id_lea }}" {% if filters.league and filters.league|int==league.id_lea %}selected{%
+                endif %}>{{ league.name }}</option>
             {% endfor %}
         </select>
     </div>
@@ -34,13 +46,27 @@
     <div class="card">
         <div style="display:flex;justify-content:space-between;align-items:center;">
             <div>
-                <div class="card-title">{{ game.game_type }} · {{ game.location }}</div>
+                <div class="card-title">
+                    <a href="{{ url_for('game_detail', game_id=game.id_gam) }}"
+                        style="text-decoration: none; color: inherit;">
+                        {{ game.game_type }} · {{ game.location }}
+                    </a>
+                </div>
                 <div class="card-value" style="font-size:1.2rem;">{{ game.game_date.strftime('%d/%m/%Y') }}</div>
-                <div style="color:#6b7280;font-size:0.9rem;">Match #{{ game.game_id }}{% if game.league %} · {{ game.league.name }}{% elif game.championship %} · {{ game.championship.name }} {{ game.championship.year }}{% endif %}</div>
+                <div style="color:#6b7280;font-size:0.9rem;">Match #{{ game.game_id }}{% if game.league %} · {{
+                    game.league.name }}{% elif game.championship %} · {{ game.championship.name }} {{
+                    game.championship.year }}{% endif %}</div>
             </div>
         </div>
         <table>
-            <thead><tr><th>Participant</th><th>Type</th><th>Score</th><th>Rôle</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>Participant</th>
+                    <th>Type</th>
+                    <th>Score</th>
+                    <th>Rôle</th>
+                </tr>
+            </thead>
             <tbody>
                 {% for participant in game.participants %}
                 <tr>
@@ -50,7 +76,9 @@
                     <td>{{ participant.role }}</td>
                 </tr>
                 {% else %}
-                <tr><td colspan="4">Pas de participants liés.</td></tr>
+                <tr>
+                    <td colspan="4">Pas de participants liés.</td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>
@@ -60,4 +88,3 @@
     {% endfor %}
 </section>
 {% endblock %}
-

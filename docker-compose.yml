@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      # Connect to the 'db' service defined below
+      - DATABASE_URL=postgresql://postgres:secret@db:5432/basketball
+      - FLASK_APP=app.py
+      - FLASK_DEBUG=1
+      - SQLALCHEMY_ECHO=true
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=basketball
+    volumes:
+      # Automatically initialize the DB with your SQL script
+      - ./CreateTables.sql:/docker-entrypoint-initdb.d/1_init.sql
+    ports:
+      - "5433:5432" # Mapped to 5433 on host to avoid conflict with your local Postgres

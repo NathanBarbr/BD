@@ -10,17 +10,33 @@
     <a href="{{ url_for('create_player') }}"> <button>Nouveau joueur</button> </a>
     {% endif %}
 </div>
-<form method="get" style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
+<form method="get"
+    style="margin-top:1rem;background:#fff;padding:1rem;border-radius:8px;display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1rem;">
     <div>
-        <label for="q">Nom contient</label>
-        <input type="text" id="q" name="q" value="{{ filters.q }}">
+        <label for="continent">Continent</label>
+        <select id="continent" name="continent" style="max-height: 150px; overflow-y: auto;">
+            <option value="">Tous</option>
+            {% for c in continents %}
+            <option value="{{ c }}" {% if filters.continent==c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div>
+        <label for="citizenship">Nationalité</label>
+        <select id="citizenship" name="citizenship" style="max-height: 150px; overflow-y: auto;">
+            <option value="">Toutes</option>
+            {% for c in citizenships %}
+            <option value="{{ c }}" {% if filters.citizenship==c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+        </select>
     </div>
     <div>
         <label for="club">Club</label>
-        <select id="club" name="club">
+        <select id="club" name="club" style="max-height: 150px; overflow-y: auto;">
             <option value="">Tous</option>
             {% for club in clubs %}
-                <option value="{{ club.id_clu }}" {% if filters.club and filters.club|int == club.id_clu %}selected{% endif %}>{{ club.name }}</option>
+            <option value="{{ club.id_clu }}" {% if filters.club and filters.club|int==club.id_clu %}selected{% endif
+                %}>{{ club.name }}</option>
             {% endfor %}
         </select>
     </div>
@@ -40,10 +56,15 @@
         </tr>
     </thead>
     <tbody>
-    {% for player in players %}
+        {% for player in players %}
         <tr>
             <td>{{ player.player_id }}</td>
-            <td>{{ player.name }}</td>
+            <td>
+                <a href="{{ url_for('player_profile', player_id=player.id_pla) }}"
+                    style="text-decoration: none; color: inherit; font-weight: 500;">
+                    {{ player.name }}
+                </a>
+            </td>
             <td>{{ player.date_of_birth.strftime('%d/%m/%Y') if player.date_of_birth else '-' }}</td>
             <td>{{ '%.2f'|format(player.height) if player.height else '-' }}</td>
             <td>{{ player.club.name if player.club else 'N/A' }}</td>
@@ -53,10 +74,11 @@
             </td>
             {% endif %}
         </tr>
-    {% else %}
-        <tr><td colspan="6">Aucun joueur trouvé.</td></tr>
-    {% endfor %}
+        {% else %}
+        <tr>
+            <td colspan="6">Aucun joueur trouvé.</td>
+        </tr>
+        {% endfor %}
     </tbody>
 </table>
 {% endblock %}
-

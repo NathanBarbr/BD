@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Requêtes SQL{% endblock %}
+
+{% block content %}
+<div style="max-width: 1200px; margin: 0 auto; padding: 20px;">
+    <h1>Requêtes SQL</h1>
+    <p>Sélectionnez une requête pour l'exécuter.</p>
+
+    <div style="display: flex; gap: 20px; align-items: flex-start;">
+        <!-- Menu latéral -->
+        <div style="width: 250px; flex-shrink: 0; background: #fff; border: 1px solid #ddd; border-radius: 5px;">
+            {% for key in queries|sort %}
+            <form method="POST" style="margin: 0;">
+                <input type="hidden" name="query_key" value="{{ key }}">
+                <button type="submit"
+                    style="width: 100%; text-align: left; padding: 12px 15px; border: none; border-bottom: 1px solid #eee; background: {% if selected_key == key %}#007bff{% else %}transparent{% endif %}; color: {% if selected_key == key %}white{% else %}#333{% endif %}; cursor: pointer; font-size: 1rem;">
+                    {{ key }}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+
+        <!-- Contenu -->
+        <div style="flex-grow: 1;">
+            {% if selected_key %}
+            <div style="background: #fff; border: 1px solid #ddd; border-radius: 5px; padding: 20px;">
+                <h2 style="margin-top: 0;">Résultat pour {{ selected_key }}</h2>
+
+                <!-- Code SQL -->
+                <div
+                    style="background: #f8f9fa; padding: 15px; border: 1px solid #ddd; border-radius: 4px; font-family: monospace; white-space: pre-wrap; margin-bottom: 20px; color: #333;">
+                    {{ sql_query }}</div>
+
+                {% if error %}
+                <div
+                    style="background: #ffebee; color: #c62828; padding: 15px; border: 1px solid #ef9a9a; border-radius: 4px;">
+                    <strong>Erreur :</strong> {{ error }}
+                </div>
+                {% elif results %}
+                <div style="overflow-x: auto;">
+                    <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                        <thead>
+                            <tr style="background: #f1f1f1; border-bottom: 2px solid #ccc;">
+                                {% for column in columns %}
+                                <th style="padding: 10px; text-align: left; border: 1px solid #ddd; color: #333;">{{
+                                    column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in results %}
+                            <tr
+                                style="background: {% if loop.index0 is divisibleby 2 %}#fff{% else %}#f9f9f9{% endif %};">
+                                {% for cell in row %}
+                                <td style="padding: 8px; border: 1px solid #ddd; color: #333;">{{ cell }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                <p style="text-align: right; color: #666; margin-top: 10px;">{{ results|length }} lignes</p>
+                {% else %}
+                <p>Aucun résultat.</p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div
+                style="padding: 40px; text-align: center; color: #666; background: #f9f9f9; border: 1px dashed #ccc; border-radius: 5px;">
+                Choisissez une requête dans le menu de gauche.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
