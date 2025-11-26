@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Détails du Match{% endblock %}
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('games') }}" style="color: #6b7280; text-decoration: none;">&larr; Retour aux matchs</a>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
+    <div style="text-align: center;">
+        <h1 style="margin-bottom: 0.5rem;">{{ game.game_type }}</h1>
+        <p style="color: #6b7280; font-size: 1.1rem;">{{ game.game_date.strftime('%d/%m/%Y') }} · {{ game.location }}
+        </p>
+        {% if game.league %}
+        <span
+            style="display: inline-block; background: #e5e7eb; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; margin-top: 0.5rem;">{{
+            game.league.name }}</span>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h2>Statistiques des Joueurs (Box Score)</h2>
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Joueur</th>
+                    <th style="text-align: center;">PTS</th>
+                    <th style="text-align: center;">REB</th>
+                    <th style="text-align: center;">AST</th>
+                    <th style="text-align: center;">BLK</th>
+                    <th style="text-align: center;">2PTS</th>
+                    <th style="text-align: center;">3PTS</th>
+                    <th style="text-align: center;">LF</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for stat in stats %}
+                <tr>
+                    <td>
+                        <div style="font-weight: 500;">{{ stat.player.name }}</div>
+                        <div style="font-size: 0.85rem; color: #6b7280;">{{ stat.player.club.name if stat.player.club
+                            else 'Sans club' }}</div>
+                    </td>
+                    <td style="text-align: center; font-weight: bold; font-size: 1.1rem;">{{ stat.total_points }}</td>
+                    <td style="text-align: center;">{{ stat.rebounds }}</td>
+                    <td style="text-align: center;">{{ stat.assists }}</td>
+                    <td style="text-align: center;">{{ stat.blocks }}</td>
+                    <td style="text-align: center; color: #6b7280;">{{ stat.points_2pts_made }}/{{
+                        stat.points_2pts_attempted }}</td>
+                    <td style="text-align: center; color: #6b7280;">{{ stat.points_3pts_made }}/{{
+                        stat.points_3pts_attempted }}</td>
+                    <td style="text-align: center; color: #6b7280;">{{ stat.free_throws_made }}/{{
+                        stat.free_throws_attempted }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem; color: #6b7280;">
+                        Aucune statistique disponible pour ce match.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

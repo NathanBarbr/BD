@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Profil Joueur{% endblock %}
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <a href="{{ url_for('players') }}" style="color: #6b7280; text-decoration: none;">&larr; Retour aux joueurs</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
+    <!-- Player Info Card -->
+    <div class="card">
+        <div style="display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;">
+            <div
+                style="width: 80px; height: 80px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; color: #9ca3af;">
+                {{ player.name[0] }}
+            </div>
+            <div>
+                <h1 style="margin: 0; font-size: 1.5rem;">{{ player.name }}</h1>
+                <p style="color: #6b7280; margin: 0.25rem 0;">{{ player.citizenship }}</p>
+                {% if player.club %}
+                <span
+                    style="display: inline-block; background: #dbeafe; color: #1e40af; padding: 0.25rem 0.75rem; border-radius: 9999px; font-size: 0.875rem; margin-top: 0.5rem;">
+                    {{ player.club.name }}
+                </span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+            <div>
+                <div style="color: #6b7280; font-size: 0.875rem;">Date de naissance</div>
+                <div style="font-weight: 500;">{{ player.date_of_birth.strftime('%d/%m/%Y') }}</div>
+            </div>
+            <div>
+                <div style="color: #6b7280; font-size: 0.875rem;">Taille</div>
+                <div style="font-weight: 500;">{{ '%.2f'|format(player.height) }} m</div>
+            </div>
+        </div>
+
+        {% if permissions.can_edit_players %}
+        <div style="margin-top: 1.5rem;">
+            <a href="{{ url_for('edit_player', player_id=player.id_pla) }}">
+                <button style="width: 100%;">Modifier le profil</button>
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Career Stats Card -->
+    <div class="card">
+        <h2 style="margin-top: 0;">Statistiques en Carrière</h2>
+
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; margin-top: 1.5rem;">
+            <div style="text-align: center; padding: 1rem; background: #f9fafb; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #4f46e5;">{{ stats.ppg }}</div>
+                <div style="color: #6b7280; font-size: 0.875rem;">Points par match</div>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: #f9fafb; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #4f46e5;">{{ stats.games_played }}</div>
+                <div style="color: #6b7280; font-size: 0.875rem;">Matchs joués</div>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: #f9fafb; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #10b981;">{{ stats.rpg }}</div>
+                <div style="color: #6b7280; font-size: 0.875rem;">Rebonds par match</div>
+            </div>
+            <div style="text-align: center; padding: 1rem; background: #f9fafb; border-radius: 8px;">
+                <div style="font-size: 2rem; font-weight: bold; color: #f59e0b;">{{ stats.apg }}</div>
+                <div style="color: #6b7280; font-size: 0.875rem;">Passes par match</div>
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; border-top: 1px solid #e5e7eb; padding-top: 1rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                <span style="color: #6b7280;">Total Points</span>
+                <span style="font-weight: 500;">{{ stats.total_points }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: #6b7280;">Total Contres</span>
+                <span style="font-weight: 500;">{{ stats.total_blocks }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
