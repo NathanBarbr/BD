@@ -523,13 +523,13 @@ def game_detail(game_id):
 def admin_sql():
     import glob
     
-    # Charger les requêtes depuis les fichiers req*.sql
+    # Charger les requêtes depuis les fichiers req*.sql et SqlView/*.sql
     queries = {}
-    # On cherche les fichiers req1.sql à req7.sql (ou plus)
-    files = sorted(glob.glob("req*.sql"))
+    # On cherche les fichiers req*.sql et ceux dans SqlView/
+    files = sorted(glob.glob("req*.sql") + glob.glob("SqlView/*.sql"))
     
     for f_path in files:
-        # Extraire le nom (ex: "req1")
+        # Extraire le nom (ex: "req1" ou "view1")
         key = os.path.splitext(os.path.basename(f_path))[0]
         # Lire le contenu
         try:
@@ -550,13 +550,37 @@ def admin_sql():
         if selected_key and selected_key in queries:
             sql_query = queries[selected_key]
             try:
+                import re
                 from sqlalchemy import text
-                result_proxy = db.session.execute(text(sql_query))
-                if result_proxy.returns_rows:
+                
+                # Détecter si c'est un CREATE VIEW
+                view_match = re.search(
+                    r'CREATE\s+(?:OR\s+REPLACE\s+)?VIEW\s+(\w+)',
+                    sql_query,
+                    re.IGNORECASE
+                )
+                
+                if view_match:
+                    # C'est une vue : d'abord créer la vue
+                    view_name = view_match.group(1)
+                    db.session.execute(text(sql_query))
+                    db.session.commit()
+                    
+                    # Puis afficher son contenu
+                    select_query = f"SELECT * FROM {view_name}"
+                    result_proxy = db.session.execute(text(select_query))
                     columns = result_proxy.keys()
                     results = result_proxy.fetchall()
+                    
+                    flash(f"Vue '{view_name}' créée/mise à jour avec succès !", "info")
                 else:
-                    db.session.commit()
+                    # Requête normale
+                    result_proxy = db.session.execute(text(sql_query))
+                    if result_proxy.returns_rows:
+                        columns = result_proxy.keys()
+                        results = result_proxy.fetchall()
+                    else:
+                        db.session.commit()
             except Exception as e:
                 db.session.rollback()
                 error = str(e)

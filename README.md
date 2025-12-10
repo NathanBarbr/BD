@@ -1,57 +1,65 @@
-﻿# Interface applicative pour la base PostgreSQL
+﻿# Basketball DB - Interface de Gestion
 
-Cette application Flask/SQLAlchemy fournit une interface web simple (tableau de bord, gestion des joueurs, visualisation des matchs) connectee a la base `basketball` creee par `CreateTables.sql`. Elle ajoute une couche d'authentification et de droits (admin, staff, viewer).
+Une application web Flask pour gérer et visualiser une base de données de basketball (PostgreSQL). Elle offre un tableau de bord interactif, une gestion complète des joueurs et des matchs, ainsi que des outils d'administration.
 
-## Prerequis
+## Fonctionnalités Principales
 
+### 📊 Tableau de Bord Interactif
+- **Indicateurs clés** : Nombre total de joueurs, clubs, matchs et ligues.
+- **Graphiques** :
+    - Répartition des joueurs par nationalité (Doughnut Chart).
+    - Top 5 des meilleurs marqueurs (Bar Chart).
+
+### 🏀 Gestion des Joueurs
+- **Liste filtrable** : Recherche par nom, filtrage par club, nationalité et continent.
+- **Profil Public** : Page détaillée pour chaque joueur avec ses informations personnelles et ses **statistiques de carrière** calculées (Points, PPG, RPG, APG, Contres).
+- **Administration** : Création et modification de fiches joueurs (réservé aux rôles `admin` et `staff`).
+
+### 🏟️ Matchs et Statistiques
+- **Liste des matchs** : Filtrage par saison, type de jeu et ligue.
+- **Fiche de Match (Box Score)** : Vue détaillée d'un match avec le tableau complet des statistiques de chaque joueur (Points, Rebonds, Passes, etc.).
+
+### 🛠️ Outils d'Administration
+- **Exécuteur SQL** : Interface pour exécuter des requêtes SQL arbitraires ou prédéfinies directement depuis le navigateur (réservé au rôle `admin`).
+
+## Installation et Lancement
+
+### Prérequis
 - Python 3.10+
-- PostgreSQL en cours d'execution avec la base `basketball` (voir `CreateTables.sql`)
+- PostgreSQL avec la base de données `basketball` initialisée.
 
-## Installation
+### Configuration
+1.  Créer un environnement virtuel :
+    ```bash
+    python -m venv venv
+    venv\Scripts\activate
+    ```
+2.  Installer les dépendances :
+    ```bash
+    pip install -r requirements.txt
+    ```
+3.  Configurer les variables d'environnement (optionnel, fichier `.env`) :
+    - `DATABASE_URL` : URL de connexion PostgreSQL (défaut : `postgresql+psycopg2://postgres:secret@localhost:5432/basketball`)
+    - `APP_SECRET_KEY` : Clé secrète Flask.
 
+### Démarrage
 ```bash
-python -m venv .venv
-.venv\Scripts\activate  # Windows
-pip install -r requirements.txt
+python app.py
 ```
+L'application sera accessible sur `http://localhost:5000`.
 
-## Configuration
+## Rôles et Comptes de Démonstration
 
-Les variables suivantes peuvent etre definies dans un fichier `.env` ou dans l'environnement systeme :
+| Rôle   | Identifiant | Mot de passe | Permissions |
+| :---   | :---        | :---         | :--- |
+| **Admin**  | `admin`     | `admin123`   | Accès complet (CRUD Joueurs, SQL Runner). |
+| **Staff**  | `staff`     | `staff123`   | Gestion des joueurs (Création/Édition). |
+| **Viewer** | `viewer`    | `viewer123`  | Lecture seule (Tableau de bord, Profils, Matchs). |
 
-- `DATABASE_URL` : chaine SQLAlchemy vers votre instance (defaut `postgresql+psycopg2://postgres:secret@localhost:5432/basketball`).
-- `APP_SECRET_KEY` : cle Flask utilisee pour signer les sessions (defaut de developpement `dev-change-me`).
+## Structure du Projet
 
-## Lancement
-
-```bash
-$env:FLASK_APP = "app"   # PowerShell
-flask run --debug
-```
-
-L'interface est ensuite accessible sur http://localhost:5000.
-
-## Comptes de demonstration
-
-| Utilisateur | Mot de passe | Role   | Capacites principales                |
-|-------------|--------------|--------|--------------------------------------|
-| admin       | admin123     | admin  | Lecture + creation/modification      |
-| staff       | staff123     | staff  | Meme droits que admin sur les joueurs|
-| viewer      | viewer123    | viewer | Lecture seule                        |
-
-> Pour une integration reelle, remplacez ces comptes statiques par une table utilisateur et un stockage de mots de passe haches.
-
-## Fonctionnalites clefs
-
-- **Tableau de bord** : indicateurs (joueurs, clubs, matchs, ligues), top scoreurs, prochains matchs.
-- **Gestion des joueurs** : recherche textuelle, filtre par club, creation/edition conditionnee par le role.
-- **Matchs** : filtres par saison/type/ligue et affichage des participants avec leurs scores.
-
-## Tests rapides
-
-1. Charger vos donnees (scripts `CreateTables.sql` + inserts).
-2. Lancer l'appli puis se connecter avec `admin/admin123`.
-3. Ajouter un joueur et verifier son apparition dans la liste.
-4. Consulter `Matchs` pour valider la resolution des participants (clubs/equipes nationales).
-
-N'hesitez pas a adapter les gabarits Jinja (`templates/`) ou le style (`static/styles.css`) pour coller a votre charte.
+- `app.py` : Application Flask principale (Routes, Modèles, Logique).
+- `templates/` : Gabarits HTML (Jinja2).
+- `static/` : Fichiers CSS et images.
+- `CreateTables.sql` : Script de création de la base de données.
+- `seed_db.py` : Script de peuplement de la base avec des données de test (Faker).
