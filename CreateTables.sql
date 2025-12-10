@@ -58,16 +58,29 @@ CREATE TABLE Game (
     Game_ID VARCHAR(10) NOT NULL,
     Game_date DATE NOT NULL,
     Location VARCHAR(100) NOT NULL,
+    Game_type VARCHAR(50) NOT NULL,
+    Season VARCHAR(50),
+    ID_Lea INT,
+    ID_Cha INT,
+    CONSTRAINT FK_Game_League FOREIGN KEY (ID_Lea) REFERENCES League (ID_Lea),
+    CONSTRAINT FK_Game_Championship FOREIGN KEY (ID_Cha) REFERENCES Championship (ID_Cha)
+);
+
 CREATE TABLE Game_Participant (
     ID_Gam INT NOT NULL,
-    Participant_ID INT NOT NULL,  -- Fait référence à ID_Clu OU ID_Nat
+    Participant_ID INT NOT NULL, -- Fait référence à ID_Clu OU ID_Nat
     Participant_Type VARCHAR(20) NOT NULL, -- 'Club' ou 'National'
     Score INT DEFAULT 0,
     Role VARCHAR(10), -- 'Home' ou 'Away'
-    PRIMARY KEY (ID_Gam, Participant_ID, Participant_Type),
-    CONSTRAINT FK_GP_Game FOREIGN KEY (ID_Gam)
-        REFERENCES Game(ID_Gam),
-    CHECK (Participant_Type IN ('Club', 'National'))
+    PRIMARY KEY (
+        ID_Gam,
+        Participant_ID,
+        Participant_Type
+    ),
+    CONSTRAINT FK_GP_Game FOREIGN KEY (ID_Gam) REFERENCES Game (ID_Gam),
+    CHECK (
+        Participant_Type IN ('Club', 'National')
+    )
 );
 
 /* [MODIFIÉ] Ajout des tirs tentés et des paniers à 2 points */
@@ -78,6 +91,7 @@ CREATE TABLE PLAYER_GAME_STATS (
     ID_Stat SERIAL,
 
 -- Statistiques complètes pour les calculs
+
 
 Points_2pts_made INT DEFAULT 0,
     Points_2pts_attempted INT DEFAULT 0,
@@ -167,8 +181,6 @@ CREATE INDEX IDX_HSC_Sponsor ON Has_Sponsor_Club (ID_Spo);
 CREATE INDEX IDX_HST_Sponsor ON Has_Sponsor_Team (ID_Spo);
 
 CREATE INDEX IDX_Member_Team ON Member_of (ID_Nat);
-
-CREATE INDEX IDX_Participates_Team ON Participates_in (ID_Nat);
 
 CREATE INDEX IDX_Participates_Team ON Participates_in (ID_Nat);
 

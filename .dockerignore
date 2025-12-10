@@ -1,0 +1,11 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.gitignore
+.idea/
+*.md
+debug_*.py
+debug_*.txt
+reproduction_*.txt
+test_*.py

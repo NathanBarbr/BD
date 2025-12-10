@@ -53,18 +53,41 @@ def run_seed():
         cur.execute("INSERT INTO clubs (club_id, name, city) VALUES (%s, %s, %s) RETURNING id_clu", (cid, name, city))
         club_map[cid] = cur.fetchone()[0]
 
-    # 3. National Teams
+    # 3. National Teams (Couvrant les 6 confédérations FIBA)
     curated_teams = [
+        # FIBA Europe
         ('NAT_ESP', 'Spain', 'FIBA Europe'),
         ('NAT_LTU', 'Lithuania', 'FIBA Europe'),
         ('NAT_FRA', 'France', 'FIBA Europe'),
+        ('NAT_GER', 'Germany', 'FIBA Europe'),
+        ('NAT_ITA', 'Italy', 'FIBA Europe'),
+        ('NAT_SRB', 'Serbia', 'FIBA Europe'),
+        ('NAT_GRE', 'Greece', 'FIBA Europe'),
+        ('NAT_TUR', 'Turkey', 'FIBA Europe'),
+        # FIBA Americas
         ('NAT_ARG', 'Argentina', 'FIBA Americas'),
-        ('NAT_USA', 'United States', 'FIBA Americas')
+        ('NAT_USA', 'United States', 'FIBA Americas'),
+        ('NAT_CAN', 'Canada', 'FIBA Americas'),
+        ('NAT_BRA', 'Brazil', 'FIBA Americas'),
+        # FIBA Africa
+        ('NAT_NGA', 'Nigeria', 'FIBA Africa'),
+        ('NAT_SEN', 'Senegal', 'FIBA Africa'),
+        ('NAT_ANG', 'Angola', 'FIBA Africa'),
+        # FIBA Asia
+        ('NAT_CHN', 'China', 'FIBA Asia'),
+        ('NAT_JPN', 'Japan', 'FIBA Asia'),
+        ('NAT_PHI', 'Philippines', 'FIBA Asia'),
+        ('NAT_KOR', 'South Korea', 'FIBA Asia'),
+        # FIBA Oceania
+        ('NAT_AUS', 'Australia', 'FIBA Oceania'),
+        ('NAT_NZL', 'New Zealand', 'FIBA Oceania'),
     ]
     team_map = {} # team_id_str -> db_id
+    all_countries = []  # Liste pour les joueurs Faker
     for tid, country, conf in curated_teams:
         cur.execute("INSERT INTO national_team (team_id, country, confederation) VALUES (%s, %s, %s) RETURNING id_nat", (tid, country, conf))
         team_map[tid] = cur.fetchone()[0]
+        all_countries.append(country)
 
     # 4. Sponsors
     curated_sponsors = [
@@ -254,11 +277,13 @@ def run_seed():
     filler_players = []
     for _ in range(200):
         dob = fake.date_of_birth(minimum_age=18, maximum_age=38)
+        # Utiliser uniquement les pays qui ont une équipe nationale
+        player_country = random.choice(all_countries)
         cur.execute("""
             INSERT INTO player (player_id, name, date_of_birth, height, citizenship, current_club_id)
             VALUES (%s, %s, %s, %s, %s, %s) RETURNING id_pla
         """, (fake.unique.bothify(text='PLY####'), fake.name_male(), dob,
-              round(random.uniform(1.80, 2.20), 2), fake.country(), random.choice(filler_clubs)))
+              round(random.uniform(1.80, 2.20), 2), player_country, random.choice(filler_clubs)))
         filler_players.append(cur.fetchone()[0])
 
     # 4. Games (100 random games)
